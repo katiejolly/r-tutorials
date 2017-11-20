@@ -14,6 +14,20 @@ output:
 
 I'm a huge fan of nonfiction books and documentaries. I've never loved a lot of the big Hollywood movies, but I do enjoy biopics. I find that they give me a good amount of the nonfiction that I enjoy and the drama that makes a blockbuster hit. But, I often find myself a little disappointed in the breadth of biopics available. Most feature a pretty narrow demographic group: straight, white men. Fivethirtyeight did a nice story on this pattern and published the data they used. So, we are going to use that data to write our own story with ggplot! We will start by recreating the graphics from the article ['Straight Outta Compton' is the rare biopic not about white dudes](https://fivethirtyeight.com/features/straight-outta-compton-is-the-rare-biopic-not-about-white-dudes/) and then make some of our own!
 
+### Assumed knowledge
+
+In this activity I've assumed a few things about your comfort level with R and RStudio, although I've designed it to be accessible to everyone. I assume you've at least seen the following things before:
+
+* RMarkdown (for presenting your work)
+
+* Packages (for a wider selection of functions)
+
+If these are new to you, I'd suggest taking a look at the [RMarkdown cheat sheet](https://www.rstudio.com/wp-content/uploads/2015/02/rmarkdown-cheatsheet.pdf) to learn more about the markdown structure and this [R Packages article](https://www.datacamp.com/community/tutorials/r-packages-guide) to learn about using packages.
+
+There are times when I mention things about data wrangling (or preparing your data for analysis). I don't assume knowledge of `dplyr` so I've provided code for you to use. If you're interested in learning more, try reading this [data wrangling cheat sheet](https://www.rstudio.com/wp-content/uploads/2015/02/data-wrangling-cheatsheet.pdf) or trying this [dplyr tutorial for beginners](http://genomicsclass.github.io/book/pages/dplyr_tutorial.html). If you want to test your use of dplyr, try checking out my [dplyr tutorial with bikeshare data](http://katiejolly.io/bikeshare-dplyr/)! 
+
+
+
 ### Packages needed
 
 First, we'll need to install a few packages. The`tidyverse` package includes both `readr` and `ggplot2`, two of the packages we will be using. 
@@ -70,7 +84,7 @@ and as with everything else in R, a little googling will get you a long way.
 
 ## Looking at race
 
-We will evetually create this graph!
+We will eventually create this graph!
 
 ![](race_viz.JPG)
 
