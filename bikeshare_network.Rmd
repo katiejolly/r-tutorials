@@ -1,0 +1,105 @@
+---
+title: "Visualizing the DC bikeshare network"
+author: "Katie Jolly"
+date: "November 20, 2017"
+output: 
+  html_document:
+    toc: true
+    toc_float: true
+    theme: "cosmo"
+---
+
+# Setting up the project
+
+DC has a vast and well-used public bike system. There are lots of bike lanes, and even a few protected bikeways to help make biking a more appealing option. In my experience, I can often move around faster on a bike than I can on a metro train, bus, or in a car. In this project I will explore different ways of thinking about the project, pulling from different resources along the way. My initial inspiration to write this project was the paper [Visualizing London's Bicycle-Hire Scheme](http://openaccess.city.ac.uk/538/) by Jo Wood, Aidan Slingsby, and Jason Dykes. It introduces new (or improved) techniques for visualizing dense transportation networks where simple vertices and edges might not suffice. I wanted to try to adapt this analysis to the specific context of DC, and perhaps broaden it in the future! 
+
+Some of the data science topics I'll attempt to cover are:
+
+* Data wrangling
+
+* Databases
+
+* Data visualization
+
+* Presentation
+
+I'll try to leave explanations as I go! I'll also include all of the code in case anything is new or confusing. 
+
+# Packages
+
+```{r message=FALSE, warning=FALSE}
+library(tidyverse) # this includes a variety of packages including ggplot2, tidyr, dplyr, and stringr
+library(leaflet) # for interactive maps
+library(sp) # configuring geographic data
+library(rgdal) # configuring geographic data
+library(igraph) # network analysis
+library(lubridate) # manipulation time data
+# install highcharter
+```
+
+
+# Analysis and visualization
+
+## Data!
+
+I'm starting with just one fiscal quarter (2015 Q1) of data to see how the methods work. At the end I'll perform the same analysis on a much larger set of data. 
+
+```{r message=FALSE}
+dc_bikes_sample_2015Q1 <- read_csv("bikeshare-dplyr/dc_bikes_sample_2015Q1.csv")
+```
+
+First let's take a look at the data we do have. 
+
+```{r}
+glimpse(dc_bikes_sample_2015Q1)
+```
+
+This table contains 431,465 trips. That's more than enough to do some preliminary analysis before adding in a longer time period. 
+
+## Cleaning the data
+
+There are a few inconsistencies that can happen with the data. The first, a zero time-lenth journey, is something we should filter out. These were likely customers who failed to properly get a bike or returned a bike that they realized was not functional. These trips won't add to our analysis. The second, a zero distance journey, may seem like an error but is likely a valid trip. In this case, the customer likely make a quick loop around and returned a bike to the same docking station. This is a common occurence near the National Mall where tourists may just take the bikes for a quick tour of the area. 
+
+### Filtering zero time-length trips
+
+```{r}
+dc_bikes_sample_2015Q1_clean <- dc_bikes_sample_2015Q1 %>%
+  mutate(sdate = mdy_hm(sdate),
+         edate = mdy_hm(edate),
+         stime = hour(sdate) + minute(sdate)/60,
+         etime = hour(edate) + minute(edate)/60,
+         duration = ifelse(etime - stime >= 0, etime - stime, 24-stime + etime)) %>%
+  filter((duration != 0), !(sstation == estation & duration <= 0.1)) # taking out trips with 0 duration or a very short duration with the same start and end station
+```
+
+Out of curiosity, I want to save the failed attempts in case I do an analysis of them later. 
+
+```{r}
+failed_attempts <- dc_bikes_sample_2015Q1 %>%
+  mutate(sdate = mdy_hm(sdate),
+         edate = mdy_hm(edate),
+         stime = hour(sdate) + minute(sdate)/60,
+         etime = hour(edate) + minute(edate)/60,
+         duration = ifelse(etime - stime >= 0, etime - stime, 24-stime + etime)) %>%
+  group_by(sstation) %>%
+  summarize(prop_failed = sum(duration == 0)/(n() + 20)) %>%
+  arrange(desc(prop_failed))
+
+paste0("There were ", nrow(failed_attempts), " failed attempts in this data")
+```
+
+## Duration distributions
+
+```{r}
+ggplot(dc_bikes_sample_2015Q1_clean, 
+       aes(x = duration)) + 
+  geom_histogram(binwidth = 0.032, fill = "cornflowerblue", alpha = 0.9, color = "lightgray") + 
+  xlim(0, 1) +
+  labs(title = "Distribution of Capital Bikeshare trip times", 
+       subtitle = "97990 trips in 2015 Q1",
+       y = "Density",
+       x = "Trip duration (1 = 1 hour)")
+```
+
+
+
