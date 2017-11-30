@@ -34,6 +34,7 @@ library(sp) # configuring geographic data
 library(rgdal) # configuring geographic data
 library(igraph) # network analysis
 library(lubridate) # manipulation time data
+library(ggthemes) # styling the charts
 # install highcharter
 ```
 
@@ -46,6 +47,10 @@ I'm starting with just one fiscal quarter (2015 Q1) of data to see how the metho
 
 ```{r message=FALSE}
 dc_bikes_sample_2015Q1 <- read_csv("bikeshare-dplyr/dc_bikes_sample_2015Q1.csv")
+
+# dc_bikes_sample_2015Q1 <- dc_bikes_sample_2015Q1 %>%
+#   mutate(edate = mdy_hm(edate),
+#          sdate = mdy_hm(sdate))
 ```
 
 First let's take a look at the data we do have. 
@@ -63,42 +68,53 @@ There are a few inconsistencies that can happen with the data. The first, a zero
 ### Filtering zero time-length trips
 
 ```{r}
+# fix this so that it doesn't filter multi-day trips 
 dc_bikes_sample_2015Q1_clean <- dc_bikes_sample_2015Q1 %>%
   mutate(sdate = mdy_hm(sdate),
          edate = mdy_hm(edate),
          stime = hour(sdate) + minute(sdate)/60,
-         etime = hour(edate) + minute(edate)/60,
-         duration = ifelse(etime - stime >= 0, etime - stime, 24-stime + etime)) %>%
-  filter((duration != 0), !(sstation == estation & duration <= 0.1)) # taking out trips with 0 duration or a very short duration with the same start and end station
+         etime = hour(edate) + minute(edate)/60, # convert all date data to usable objects, and separate out hour and minute parts
+         duration = (edate - sdate)/60) %>% # subtraction finds the duration in seconds. Divide by 60 to get minutes.
+  filter((duration != 0), !(sstation == estation & duration <= 5)) # taking out trips with 0 duration or a very short duration with the same start and end station
 ```
 
 Out of curiosity, I want to save the failed attempts in case I do an analysis of them later. 
 
-```{r}
-failed_attempts <- dc_bikes_sample_2015Q1 %>%
+```{r warning=FALSE}
+failed_attempts <- dc_bikes_sample_2015Q1 %>% # this uses the same structure as the chunk above
   mutate(sdate = mdy_hm(sdate),
          edate = mdy_hm(edate),
          stime = hour(sdate) + minute(sdate)/60,
          etime = hour(edate) + minute(edate)/60,
-         duration = ifelse(etime - stime >= 0, etime - stime, 24-stime + etime)) %>%
-  group_by(sstation) %>%
-  summarize(prop_failed = sum(duration == 0)/(n() + 20)) %>%
-  arrange(desc(prop_failed))
+         duration = (edate - sdate)/60) %>%
+ filter((duration == 0) | (sstation == estation & duration <= 5))
 
 paste0("There were ", nrow(failed_attempts), " failed attempts in this data")
 ```
 
 ## Duration distributions
 
+### Summary statistics 
+
 ```{r}
+paste0("Mean: ", round(mean(dc_bikes_sample_2015Q1_clean$duration), 2))
+paste0("Median: ", round(median(dc_bikes_sample_2015Q1_clean$duration), 2))
+paste0("Max: ", max(dc_bikes_sample_2015Q1_clean$duration)/60, " hrs")
+paste0("Stdev: ", round(sd(dc_bikes_sample_2015Q1_clean$duration), 2))
+paste0("Total trips: ", nrow(dc_bikes_sample_2015Q1_clean))
+```
+
+
+```{r warning=FALSE}
 ggplot(dc_bikes_sample_2015Q1_clean, 
        aes(x = duration)) + 
-  geom_histogram(binwidth = 0.032, fill = "cornflowerblue", alpha = 0.9, color = "lightgray") + 
-  xlim(0, 1) +
+  geom_histogram(binwidth = 1, fill = "cornflowerblue", alpha = 0.9, color = "lightgray") + 
+  xlim(0, 60) +
+  theme_fivethirtyeight() +
   labs(title = "Distribution of Capital Bikeshare trip times", 
        subtitle = "97990 trips in 2015 Q1",
-       y = "Density",
-       x = "Trip duration (1 = 1 hour)")
+       y = "Density") +
+  geom_vline(xintercept = 14.49)
 ```
 
 

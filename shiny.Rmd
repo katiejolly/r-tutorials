@@ -1,0 +1,218 @@
+---
+title: "Making a shiny web app!"
+author: "Katie Jolly"
+date: "November 29, 2017"
+output: 
+  html_document:
+    toc: true
+    toc_float: true
+    theme: "cosmo"
+---
+
+# Packages and data
+
+```{r}
+# load the shiny package
+library(shiny)
+```
+
+```{r}
+# load the iris data
+data("iris")
+head(iris)
+```
+
+# Setting up the shiny app
+
+We need a `ui` and a `server`. `UI` is the front-end and the `server` is the back-end. They can be in the same file or in two separate files!
+
+Start by defining `ui` and `server` in the same file (for convenience). 
+
+```{r}
+ui <- fluidPage(
+  titlePanel("This is an empty Shiny app.")
+)
+
+server <- function(input, output, session) {}
+```
+
+```{r}
+shinyApp(
+  ui=ui,
+  server = server
+)
+```
+
+# Layout
+
+```{r}
+ui <- fluidPage(
+  titlePanel("Side bar layout!"),
+    sidebarLayout(
+      sidebarPanel(p("This is the sidebar panel")),
+      mainPanel(p("This is the main panel"))
+    )
+  )
+
+shinyApp(ui = ui, server = server)
+```
+
+# Inputs
+
+```{r}
+ui <- fluidPage(
+  titlePanel("My Shiny App"),
+    sidebarLayout(
+      sidebarPanel(
+        selectInput(inputId = 'x', 
+                    label = "X Variable", 
+                    choices = names(iris)),
+        radioButtons(inputId = 'y', 
+                     label = "Y Variable", 
+                     choices = names(iris), 
+                     inline = FALSE)
+      ),
+      mainPanel(p("This is the main panel"))
+    )
+  )
+shinyApp(ui = ui, server = server)
+
+# input id is how your server function understands your data. It is the connection between the ui and the server. Be careful: you can't use an id twice!!
+# choices field is required. If you don't want any choices, write NULL
+```
+
+# Output
+
+```{r}
+library(ggplot2)
+ui <- fluidPage(
+    titlePanel("My Shiny App"),
+  sidebarLayout(
+      sidebarPanel(
+        selectInput(inputId = 'x', 
+                    label = "X Variable", 
+                    choices = names(iris)), # multiple = TRUE to be able to select multiple
+        radioButtons(inputId = 'y', 
+                     label = "Y Variable", 
+                     choices = names(iris), 
+                     inline = FALSE) # checkboxgroupinputs() or something like that to be able to select multiple
+      ),
+      mainPanel(
+        plotOutput(outputId = 'plot')
+      )
+    )
+  )
+server = function(input, output, session) {
+  output$plot <- renderPlot({
+    ggplot() + 
+      geom_point(aes(x = iris[, input$x], 
+                     y = iris[, input$y], 
+                     size = 1), 
+                 color = "#6f22b6") + 
+      theme_bw() + 
+      theme(legend.position = 'none') +
+      labs(x = paste(input$x), 
+           y = paste(input$y), 
+           title = paste0("Plotting ", 
+                          input$x, " by ", 
+                          input$y))
+  })
+}
+shinyApp(ui = ui, server = server)
+```
+
+# Observe vs reactive
+
+```{r}
+ui <- fluidPage(
+    titlePanel("My Shiny App"),
+  sidebarLayout(
+      sidebarPanel(
+        selectInput(inputId = 'x', label = "X Variable", choices = names(iris)),
+        radioButtons(inputId = 'y', label = "Y Variable", choices = names(iris), inline = FALSE)
+      ),
+      mainPanel(
+        plotOutput(outputId = 'plot')
+      )
+    )
+  )
+server = function(input, output, session) {
+  observe({
+    updateRadioButtons(session, 'y', choices = names(iris)[!names(iris) %in% input$x])
+  })
+  
+  dat <- reactive({
+    return(data.frame(x = iris[, input$x], y = iris[, input$y]))
+  })
+  
+  output$plot <- renderPlot({
+    ggplot(dat()) + 
+      geom_point(aes(x = x, y = y, size = 1), color = "#6f22b6") + 
+      theme_bw() + 
+      theme(legend.position = 'none') +
+      labs(x = paste(input$x), y = paste(input$y), title = paste0("Plotting ", input$x, " by ", input$y))
+  })
+}
+shinyApp(ui = ui, server = server)
+```
+
+# Action buttons
+
+```{r}
+ui <- fluidPage(
+    titlePanel("My Shiny App"),
+  sidebarLayout(
+      sidebarPanel(
+        selectInput(inputId = 'x', 
+                    label = "X Variable", 
+                    choices = names(iris)),
+        radioButtons(inputId = 'y', 
+                     label = "Y Variable", 
+                     choices = names(iris), 
+                     inline = FALSE), 
+        tags$hr(), 
+        actionButton(inputId = 'action', 
+                     label = "Update Plot") # this includes a button to click for updating
+      ),
+      mainPanel(
+        plotOutput(outputId = 'plot')
+      )
+    )
+  )
+server = function(input, output, session) {
+  rv <- reactiveValues(p = NULL)
+  
+  observe({
+    updateRadioButtons(session, 
+                       'y', 
+                       choices = names(iris)[!names(iris) %in% input$x])
+  })
+  
+  dat <- reactive({
+    return(data.frame(x = iris[, input$x], 
+                      y = iris[, input$y]))
+  })
+  
+  output$plot <- renderPlot({
+    rv$p
+  })
+  
+  observeEvent(input$action, {
+    rv$p <- ggplot(dat()) + 
+      geom_point(aes(x = x, 
+                     y = y, 
+                     size = 1), 
+                 color = "#6f22b6") + 
+      theme_bw() + 
+      theme(legend.position = 'none') +
+      labs(x = paste(input$x), 
+           y = paste(input$y), 
+           title = paste0("Plotting ", 
+                          input$x, 
+                          " by ", 
+                          input$y))
+  })
+}
+shinyApp(ui = ui, server = server)
+```
+
