@@ -1,5 +1,5 @@
 ---
-title: "Introduction to dplyr: political donations!"
+title: "Political donations from STEM community: learning dplyr!"
 author: "Katie Jolly"
 date: "November 30, 2017"
 output: 
@@ -7,11 +7,19 @@ output:
     theme: "cosmo"
     toc: true
     toc_float: true
+    css: styles.css
+    self_contained: no
 ---
+
+<link href="https://fonts.googleapis.com/css?family=Roboto" rel="stylesheet">
+
+<script src="hideOutput.js"></script>
+
+
 
 # Setting up our project
 
-In this activity you'll get an idea of how to work with `dplyr` to manipulate your data. It's a flexible and readable way to work with data after a little bit of practice! The goal for this activity should be to gain familiarity with the main data verbs (I'll explain what those are later!) and start to develop some intuition for when to use each one, and in what order. 
+In this activity you'll get an idea of how to work with `dplyr` to manipulate your data. It's a flexible and readable way to work with data after a little bit of practice! The goal for this activity should be to gain familiarity with the main data verbs (I'll explain what those are later!) and start to develop some intuition for when to use each one, and in what order. If you've worked with SQL before, you'll notice some similarities.  
 
 We are using data from fivethirtyeight's github page on political donations from the STEM community [metadata](https://github.com/fivethirtyeight/data/tree/master/science-giving). The data were featured in the article [when scientists donate to politicians, it's usually to democrats](https://fivethirtyeight.com/features/when-scientists-donate-to-politicians-its-usually-to-democrats/). 
 
@@ -33,6 +41,7 @@ We will load the `tidyverse` package since it includes more than just `dplyr`. W
 # if you need to install tidyverse, the code is install.packages("tidyverse")
 library(tidyverse)
 library(lubridate) # install with install.packages("lubridate")
+library(ggthemes) # in case you want to make some plots!
 ```
 
 I like loading from the github page, and in this case it looks like the `fivethirtyeight` package does not yet include this data! When you load this, you'll notice it takes a while. With this in mind, write {r cache=TRUE} in place of the usual {r} at the top of the chunk. This caches (saves) your data so that it doesn't have to load every time you knit. But also with this in mind, be careful that loading the data is the only code in that chunk! You don't want to cache other things. 
@@ -107,6 +116,17 @@ donations_small_filter <-
 str(donations_small_filter)
 ```
 
+Now let's order the donations from greatest to least!
+
+```{r}
+donations_small_ordered <- # create a new table
+  donations_small %>% # start with our original data
+  arrange(desc(transaction_amt)) # arrange the table according to the transaction amount. desc tells R that we want the values to be descening (greatest to least!)
+
+str(donations_small_ordered)
+```
+
+
 
 ## Group verbs: group_by and summarise
 
@@ -141,3 +161,270 @@ donations_small_occ_groups <- # create a new table
 str(donations_small_occ_groups)
 ```
 
+Another common use of `summarise()` is finding the total number of observations in each group. To do this, you will use the function `n()`, and it doesn't take any arguments. Let's see an example.
+
+Which party has received the most donations?
+
+```{r}
+donations_most_grouped <- # create a new table
+  donations_small %>% # start with our original data
+  group_by(cand_pty_affiliation) %>% # we want to calculate per party
+  summarise(donations_n = n()) # n just counts how many observations were in each party group. I think of it as "n observations" or "number of observations" to remember the "n" part.
+
+str(donations_most_grouped)
+```
+
+
+# Practice
+
+In the above examples, we started from scratch each time. But now that we have seen the basics, trying combining the methods to get cleaner final data! For example, work with `NA` transaction amounts filtered out. 
+
+## Intermediate
+
+1. Are there states that tend to have more active donors? Cities?
+
+2. How many people donated less than $25 or more than \$200? 
+
+3. Who are the biggest donors? You could possibly define this as anyone who donated at least 1.5x the mean of the donations per person. You could also define this as the more standard "outlier" and calculate 1.5x the interquartile range then use that to find outliers. Let me know if this calculation is new for you! 
+
+4. What is the name, city, state, and occupation of the person who has donated the highest number of times total? 
+
+5. Which candidate has received the most donations? And which candidate has received the most total money in donations?
+
+## A little more than intermediate
+
+Try making a plot to help answer each question for `ggplot` practice, too! 
+
+1. Of major donors (let's say more than $200 for this question), what professions are most common?
+
+2. Which professions tend to donate more to which candidates? (You might need to have two grouping variables for this!).
+
+3. Check out some of the temporal patterns! You could look at how donations are affected by major speeches, conventions, announcements, etc.
+
+4. Did you see anything interesting in the data? Or in one of the other practice questions? Explore it! 
+
+# Answers
+
+## Intermediate
+
+1. Are there states that tend to have more active donors? Cities?
+
+<div class="fold s">
+```{r}
+states <- donations_small %>%
+  group_by(state) %>%
+  summarize(total_donors = n(),
+            total_dollars = sum(transaction_amt, na.rm = TRUE)) %>%
+  arrange(desc(total_donors))
+
+str(states)
+```
+
+2. How many people donated less than $25 or more than \$200? 
+
+```{r}
+donations_extremes <- donations_small %>%
+  filter(transaction_amt > 200 | transaction_amt < 25)
+
+nrow(donations_extremes)
+```
+
+3. Who are the biggest donors? You could possibly define this as anyone who donated at least 1.5x the mean of the donations per person. You could also define this as the more standard "outlier" and calculate 1.5x the interquartile range then use that to find outliers. Let me know if this calculation is new for you! 
+
+```{r}
+biggest_donors_mean <- donations_small %>%
+  filter(transaction_amt > 1.5 * mean(transaction_amt, na.rm=TRUE))
+
+nrow(biggest_donors_mean)
+
+biggest_donors_iqr <- donations_small %>%
+  filter(transaction_amt > 1.5 * IQR(transaction_amt, na.rm = TRUE) * quantile(transaction_amt, 0.75, na.rm = TRUE))
+
+nrow(biggest_donors_iqr)
+
+biggest_donors_iqr
+```
+
+4. What is the name, city, state, and occupation of the person who has donated the highest number of times total?
+
+```{r}
+most_often_donor <- donations_small %>%
+  group_by(cleaned_name) %>%
+  summarize(total = n(),
+            state = min(state),
+            city = min(city),
+            occupation = min(cleanedoccupation)) %>%
+  filter(!is.na(cleaned_name)) %>% # take out NA name
+  arrange(desc(total))
+
+head(most_often_donor)
+
+# I looked up Charles Spurr and he donates a lot to Tammy Duckworth!
+```
+
+5. Which candidate has received the most donations? And which candidate has received the most total money in donations?
+
+```{r}
+candidates_most <- donations_small %>%
+  group_by(cand_name) %>%
+  summarize(times = n(),
+            money = sum(transaction_amt, na.rm=TRUE)) %>%
+  filter(!is.na(cand_name)) %>%
+  arrange(desc(times))
+
+head(candidates_most)
+
+head(arrange(candidates_most, desc(money)))
+```
+
+</div>
+
+## A little more than intermediate 
+
+
+
+1. Of major donors (let’s say more than $1000 for this question), what professions are most common? Which ones donate the most total? Maybe define this as the top 10 occupations.
+
+<div class="fold s">
+
+```{r}
+professions_common <- donations_small %>%
+  filter(transaction_amt > 1000, !is.na(cleanedoccupation)) %>%
+  group_by(cleanedoccupation) %>%
+  summarise(total = n(),
+            money = sum(transaction_amt, na.rm=TRUE))
+
+professions_common %>%
+  arrange(desc(total)) %>%
+  head(10) %>%
+  ggplot(aes(x = cleanedoccupation, y = total)) +
+  geom_bar(stat="identity", fill = "cornflowerblue") +
+  theme_fivethirtyeight() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  labs(title = "Engineers donate a lot")
+```
+
+```{r}
+professions_common$cleanedoccupation <- factor(professions_common$cleanedoccupation, levels = professions_common$cleanedoccupation[order(professions_common$money, decreasing = TRUE)])
+
+professions_common %>%
+  arrange(desc(money)) %>%
+  head(10) %>%
+  ggplot(aes(x = cleanedoccupation, y = money)) +
+  geom_bar(stat="identity", fill = "cornflowerblue") +
+  theme_fivethirtyeight() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1),
+        axis.title = element_text()) +
+  labs(y = "Cumulative amount donated",
+       title = "Where does the STEM money come from?",
+       subtitle = "Occupations given in FEC filing data from 100000 donations",
+       x = "Occupation")
+  
+```
+
+2. Which professions tend to donate more to which candidates? (You might need to have two grouping variables for this!).
+
+```{r}
+double_group <- donations_small %>%
+  filter(!is.na(cand_name), !is.na(cleanedoccupation)) %>% # I want only entries with occupation and candidate listed
+  group_by(cand_name, cleanedoccupation) %>%
+  summarize(times = n(),
+            money = sum(transaction_amt, na.rm = TRUE)) %>%
+  arrange(desc(money))
+
+head(double_group)
+```
+
+3. Check out some temporal patterns!
+
+```{r}
+over_time <- donations_small %>%
+  mutate(date = mdy(transaction_dt)) %>%
+  filter(!is.na(date)) %>%
+  group_by(date) %>%
+  summarize(total = n(),
+            money = sum(transaction_amt, na.rm = TRUE),
+            mean = mean(transaction_amt, na.rm = TRUE)) 
+
+ggplot(over_time, aes(x = date, y = total)) +
+  geom_point(alpha = 0.2, color = "gray2") +
+  geom_smooth(color = "#41f4dc" ) + 
+  ylim(0,450) +
+  theme_fivethirtyeight() +
+  theme(axis.title = element_text()) +
+  labs(title = "The election in 2016 changed how often we donate",
+       y = "Number of donations", 
+       x = "Date") 
+```
+
+```{r}
+ggplot(over_time, aes(x = date, y = mean)) +
+  geom_point(alpha = 0.2, color = "gray2") +
+  geom_smooth(color = "#41f4dc" ) + 
+  ylim(0,450) +
+  theme_fivethirtyeight() +
+  theme(axis.title = element_text()) +
+  labs(title = "More donations come from small amounts",
+       y = "Average donation amount ($)", 
+       x = "Date") 
+```
+
+```{r}
+ggplot(over_time, aes(x = date, y = money)) +
+  geom_point(alpha = 0.2, color = "gray2") +
+  geom_smooth(color = "#41f4dc" ) + 
+  ylim(0,450) +
+  theme_fivethirtyeight() +
+  theme(axis.title = element_text()) +
+  labs(title = "Total amounts have been falling since 2012",
+       y = "Total amount donated ($)", 
+       x = "Date") 
+```
+
+4. I wanted to look at specific employers and see which ones donate the most times and the highest quantities!
+
+```{r}
+employers <- donations_small %>%
+  filter(!is.na(employer), !(employer) %in% c("SELF-EMPLOYED", "SELF EMPLOYED", "SELF", "RETIRED", "NOT EMPLOYED", "NONE")) %>%
+  group_by(employer) %>%
+  summarize(times = n(),
+            money = sum(transaction_amt, na.rm=TRUE))
+
+employers$employer <- factor(employers$employer, levels = employers$employer[order(employers$times, decreasing = TRUE)])
+
+employers %>%
+  arrange(desc(times)) %>%
+  head(10) %>%
+  ggplot(aes(y = times, x = employer)) +
+  geom_bar(stat="identity", fill = "cornflowerblue") +
+  theme_fivethirtyeight() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  labs(title = "Politically active employees: where do they work?",
+       subtitle = "Employers given in FEC filing data from 100000 donations",
+       y = "Number of donations")
+
+employers$employer <- factor(employers$employer, levels = employers$employer[order(employers$money, decreasing = TRUE)])
+
+employers %>%
+  arrange(desc(money)) %>%
+  head(10) %>%
+  ggplot(aes(y = money, x = employer)) +
+  geom_bar(stat="identity", fill = "cornflowerblue") +
+  theme_fivethirtyeight() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  labs(title = "Where does the money come from? Google.",
+       subtitle = "Employers given in FEC filing data from 100,000 donations",
+       y = "Cumulative amount donated")
+```
+
+</div>
+
+# Resources
+
+* [data wrangling cheat sheet](https://www.rstudio.com/wp-content/uploads/2015/02/data-wrangling-cheatsheet.pdf)
+
+* [R for Data Science: Data transformation (chapter 5)](http://r4ds.had.co.nz/transform.html)
+
+* My [DC bikeshare data](http://katiejolly.io/bikeshare-dplyr/) dplyr activity
+
+Do you know of other good dplyr activities? Let me know! 
