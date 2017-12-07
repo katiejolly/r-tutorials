@@ -7,13 +7,7 @@ output:
     theme: "cosmo"
     toc: true
     toc_float: true
-    css: styles.css
-    self_contained: no
 ---
-
-<link href="https://fonts.googleapis.com/css?family=Roboto" rel="stylesheet">
-
-<script src="hideOutput.js"></script>
 
 
 
@@ -21,7 +15,7 @@ output:
 
 In this activity you'll get an idea of how to work with `dplyr` to manipulate your data. It's a flexible and readable way to work with data after a little bit of practice! The goal for this activity should be to gain familiarity with the main data verbs (I'll explain what those are later!) and start to develop some intuition for when to use each one, and in what order. If you've worked with SQL before, you'll notice some similarities.  
 
-We are using data from fivethirtyeight's github page on political donations from the STEM community [metadata](https://github.com/fivethirtyeight/data/tree/master/science-giving). The data were featured in the article [when scientists donate to politicians, it's usually to democrats](https://fivethirtyeight.com/features/when-scientists-donate-to-politicians-its-usually-to-democrats/). 
+We are using data from fivethirtyeight's github page on political donations from the STEM community. The data were featured in the article [when scientists donate to politicians, it's usually to democrats](https://fivethirtyeight.com/features/when-scientists-donate-to-politicians-its-usually-to-democrats/). 
 
 ## Assumed knowledge
 
@@ -34,6 +28,8 @@ For this particular activity, I assume you have some familiarity with
 * `ggplot2` (optional!)
 
 ## Loading packages and data
+
+[metadata](https://github.com/fivethirtyeight/data/tree/master/science-giving) for donation data.
 
 We will load the `tidyverse` package since it includes more than just `dplyr`. We will also load the `lubridate` package for one question that involves formatting dates. 
 
@@ -209,7 +205,7 @@ Try making a plot to help answer each question for `ggplot` practice, too!
 
 1. Are there states that tend to have more active donors? Cities?
 
-<div class="fold s">
+
 ```{r}
 states <- donations_small %>%
   group_by(state) %>%
@@ -277,7 +273,6 @@ head(candidates_most)
 head(arrange(candidates_most, desc(money)))
 ```
 
-</div>
 
 ## A little more than intermediate 
 
@@ -285,7 +280,6 @@ head(arrange(candidates_most, desc(money)))
 
 1. Of major donors (let’s say more than $1000 for this question), what professions are most common? Which ones donate the most total? Maybe define this as the top 10 occupations.
 
-<div class="fold s">
 
 ```{r}
 professions_common <- donations_small %>%
@@ -417,7 +411,7 @@ employers %>%
        y = "Cumulative amount donated")
 ```
 
-</div>
+
 
 # Resources
 
