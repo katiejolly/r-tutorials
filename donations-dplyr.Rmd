@@ -1,5 +1,5 @@
 ---
-title: "Political donations from STEM community: learning dplyr!"
+title: "Political donations from the STEM community: learning dplyr!"
 author: "Katie Jolly"
 date: "November 30, 2017"
 output: 
@@ -8,8 +8,6 @@ output:
     toc: true
     toc_float: true
 ---
-
-
 
 # Setting up our project
 
@@ -88,6 +86,10 @@ donations_small_mutate <- # create a new table
 str(donations_small_mutate)
 ```
 
+### Test yourself
+
+Create a variable of the last name of each of the donors using the function `stringr::word(variable, 1)`, fill in variable with your variable of interest. 
+
 ## Row verbs: filter and arrange
 
 `filter()` and `arrange()` perform actions on the rows of our dataframe. `filter()` takes out observations we don't want and `arrange()` sorts our data however we specify!
@@ -122,13 +124,15 @@ donations_small_ordered <- # create a new table
 str(donations_small_ordered)
 ```
 
+### Test yourself
 
+Create a dataframe with all of the donations from people in California. 
 
 ## Group verbs: group_by and summarise
 
 We can also perform actions on a "group" of variables. You can think of this as changing the case/observation in your table. A case/observation is what one row represents. In the `donations` table, a case/observation is one particular transaction. `group_by()` and `summarise()` work together to help us manipulate the observations. 
 
-`group_by()` specifies how we want to group our observations (what variable will serve as the base of our obeservation) and `summarise()` specifies how we want to talk about those groups. Questions that require grouping often have "per" or "by" somewhere in them, or some variation of that. I think seeing this is a picture helps!
+`group_by()` specifies how we want to group our observations (what categorical variable will serve as the base of our obeservation) and `summarise()` specifies how we want to talk about those groups. Questions that require grouping often have "per" or "by" somewhere in them, or some variation of that. I think seeing this is a picture helps!
 
 ![](group_by_viz.JPG)
 
@@ -170,6 +174,9 @@ donations_most_grouped <- # create a new table
 str(donations_most_grouped)
 ```
 
+### Test yourself
+
+Create a dataframe that tells us the mean `transaction_amt` for each committee name (`cmte_nm`).
 
 # Practice
 
@@ -214,6 +221,14 @@ states <- donations_small %>%
   arrange(desc(total_donors))
 
 str(states)
+
+cities <- donations_small %>%
+  group_by(city) %>%
+  summarize(total_donors = n(),
+            total_dollars = sum(transaction_amt, na.rm = TRUE)) %>%
+  arrange(desc(total_donors))
+
+str(cities)
 ```
 
 2. How many people donated less than $25 or more than \$200? 
@@ -420,5 +435,13 @@ employers %>%
 * [R for Data Science: Data transformation (chapter 5)](http://r4ds.had.co.nz/transform.html)
 
 * My [DC bikeshare data](http://katiejolly.io/bikeshare-dplyr/) dplyr activity
+
+## Programming with dplyr 
+
+* [intro to programming with dplyr](https://sebastiansauer.github.io/prog_dplyr_01/)
+
+* [intro to programming with dplyr (2)](https://sebastiansauer.github.io/prop_fav/)
+
+* [programming with dplyr by hadley wickham](https://cran.r-project.org/web/packages/dplyr/vignettes/programming.html)
 
 Do you know of other good dplyr activities? Let me know! 
