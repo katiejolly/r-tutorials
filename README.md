@@ -4,14 +4,15 @@
 
 ### Currently working on:
 
-* `ggplot` tutorial for Twin Cities R Ladies using data on race and gender in biopics from the fivethirtyeight github page!
+* An introduction to dissimilarity indices to measure racial residential segregation in Charlottesville, VA with `seg`
 
-### Already finished:
+### Published:
 
-* `Leaflet` and `ACS` tutorial on household income in the Twin Cities
-* `dplyr` tutorial using DC Capital Bikeshare data 
+* [Political donations from the STEM community: An introduction to `dplyr`!](http://katiejolly.io/political-donations-dplyr/)
 
-### Visit [my github](https://github.com/katiejolly/r-tutorials) to view the code! 
+* [Exploring DC's bikeshare data: Wrangling with `dplyr`!](http://katiejolly.io/bikeshare-dplyr/) 
 
-I'm working on adding the tutorials themselves to a static webpage, so check back soon for easier access!
+* [Writing narratives with data: An introduction to `ggplot`!](http://katiejolly.io/data-narratives-ggplot/)
+
+
 
